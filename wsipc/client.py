@@ -93,9 +93,7 @@ class WSIPCClient:
     async def _connect(self) -> None:
         logger.debug(f"Connecting to {self.host}:{self.port}...")
 
-        self._ws = await self._session.ws_connect(
-            f"http://{self.host}:{self.port}/ipc", **self._options
-        )
+        self._ws = await self._session.ws_connect(f"http://{self.host}:{self.port}/ipc", **self._options)
 
         logger.debug(f"Connected to {self.host}:{self.port}.")
 
@@ -158,9 +156,7 @@ class WSIPCClient:
 
         logger.debug(f"Successfully closed connection to {self.host}:{self.port}.")
 
-    async def send(
-        self, message: Any, include_self: bool = False, channel: int = 0
-    ) -> None:
+    async def send(self, message: Any, include_self: bool = False, channel: int = 0) -> None:
         """Send a message to the IPC network.
 
         Args:

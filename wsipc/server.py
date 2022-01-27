@@ -53,13 +53,9 @@ class WSIPCServer:
 
         self._sockets: Set[web.WebSocketResponse] = set()
         self._heartbeats: Dict[web.WebSocketResponse, Event] = {}
-        self._remotes: WeakKeyDictionary[
-            web.WebSocketResponse, str
-        ] = WeakKeyDictionary()
+        self._remotes: WeakKeyDictionary[web.WebSocketResponse, str] = WeakKeyDictionary()
 
-    def _dispatch(
-        self, message: Any, channel: int, exclude: web.WebSocketResponse = None
-    ) -> None:
+    def _dispatch(self, message: Any, channel: int, exclude: web.WebSocketResponse = None) -> None:
         for socket in self._sockets:
             if socket is exclude:
                 continue
@@ -89,9 +85,7 @@ class WSIPCServer:
             )
 
             try:
-                await wait_for(
-                    self._heartbeats[ws].wait(), timeout=self.heartbeat_timeout
-                )
+                await wait_for(self._heartbeats[ws].wait(), timeout=self.heartbeat_timeout)
             except TimeoutError:
                 logger.debug(f"Timed out waiting for heartbeat from {ws}")
                 await ws.close()
@@ -99,9 +93,7 @@ class WSIPCServer:
 
             await sleep(self.heartbeat)
 
-    async def _handle_response(
-        self, ws: web.WebSocketResponse, message: WSMessage
-    ) -> None:
+    async def _handle_response(self, ws: web.WebSocketResponse, message: WSMessage) -> None:
         try:
             data = message.json()
             logger.debug(f"Received message from {self._remotes[ws]}: {data}")
@@ -152,9 +144,7 @@ class WSIPCServer:
                 if message.type == WSMsgType.TEXT:
                     await self._handle_response(ws, message)
                 elif message.type == WSMsgType.ERROR:
-                    logger.error(
-                        f"Websocket from {self._remotes[ws]} closed with exception: {ws.exception()}"
-                    )
+                    logger.error(f"Websocket from {self._remotes[ws]} closed with exception: {ws.exception()}")
 
             if not heartbeat_task.done():
                 heartbeat_task.cancel()

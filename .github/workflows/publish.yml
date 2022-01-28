@@ -1,0 +1,15 @@
+name: Publish WSIPC
+on:
+  release:
+    types:
+      - "create"
+
+  jobs:
+    build:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - name: Build and publish
+          uses: JRubics/poetry-publish@v1.10
+          with:
+            pypi_token: ${{ secrets.PYPI_TOKEN }}

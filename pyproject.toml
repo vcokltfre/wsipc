@@ -10,6 +10,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 aiohttp = "^3.8.1"
+pre-commit = "^2.17.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.12b0"
@@ -18,6 +19,7 @@ taskipy = "^1.9.0"
 
 [tool.taskipy.tasks]
 lint = "black . && isort --profile black ."
+pre-commit = "pre-commit install"
 
 [tool.black]
 line-length = 120

@@ -160,6 +160,8 @@ class WSIPCClient:
             if not reconnect:
                 break
 
+            logger.debug("WebSocket disconnected, retrying in 1 second.")
+
             await sleep(1)
 
         if not self.closed:

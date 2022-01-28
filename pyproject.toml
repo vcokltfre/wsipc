@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wsipc"
-version = "0.0.2"
+version = "0.0.3"
 description = "Async Python IPC using WebSockets"
 authors = ["vcokltfre <vcokltfre@gmail.com>"]
 license = "MIT"

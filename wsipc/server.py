@@ -58,6 +58,8 @@ class WSIPCServer:
     def _dispatch(
         self, message: Any, channel: int, idempotency: int = None, exclude: web.WebSocketResponse = None
     ) -> None:
+        logger.debug(f"Dispatching on channel {channel} ({idempotency}): {message}")
+
         for socket in self._sockets:
             if socket is exclude:
                 continue
@@ -81,6 +83,8 @@ class WSIPCServer:
         while True:
             self._heartbeats[ws].clear()
 
+            logger.debug(f"Sending heartbeat to {self._remotes[ws]}...")
+
             await ws.send_json(
                 {
                     "t": PayloadType.HEARTBEAT,
@@ -90,7 +94,7 @@ class WSIPCServer:
             try:
                 await wait_for(self._heartbeats[ws].wait(), timeout=self.heartbeat_timeout)
             except TimeoutError:
-                logger.debug(f"Timed out waiting for heartbeat from {ws}")
+                logger.debug(f"Timed out waiting for heartbeat from {self._remotes[ws]}.")
                 await ws.close()
                 del self._heartbeats[ws]
 

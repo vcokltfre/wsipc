@@ -55,7 +55,9 @@ class WSIPCServer:
         self._heartbeats: Dict[web.WebSocketResponse, Event] = {}
         self._remotes: WeakKeyDictionary[web.WebSocketResponse, str] = WeakKeyDictionary()
 
-    def _dispatch(self, message: Any, channel: int, exclude: web.WebSocketResponse = None) -> None:
+    def _dispatch(
+        self, message: Any, channel: int, idempotency: int = None, exclude: web.WebSocketResponse = None
+    ) -> None:
         for socket in self._sockets:
             if socket is exclude:
                 continue
@@ -66,6 +68,7 @@ class WSIPCServer:
                         "t": PayloadType.DATA,
                         "d": message,
                         "c": channel,
+                        "i": idempotency,
                     }
                 )
             )
@@ -117,10 +120,11 @@ class WSIPCServer:
                 await ws.close(code=WSCloseCode.POLICY_VIOLATION)
                 return
 
-            exclude = ws if data.get("s", False) else None
+            exclude = None if data.get("s", False) else ws
             channel = data.get("c", 0)
+            idempotency = data.get("i", None)
 
-            self._dispatch(data["d"], channel, exclude)
+            self._dispatch(data["d"], channel, idempotency, exclude)
 
             return
 

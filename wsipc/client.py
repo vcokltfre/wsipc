@@ -17,6 +17,23 @@ from .utils import Callback, maybe_async
 logger = getLogger(__name__)
 
 
+class EventIDManager:
+    def __init__(self, retention: float = 60) -> None:
+        self.retention = retention
+        self._events: Set[int] = set()
+
+    def add(self, value: int) -> bool:
+        if value in self._events:
+            return False
+
+        self._events.add(value)
+        return True
+
+    async def _remove(self, value: int) -> None:
+        await sleep(self.retention)
+        self._events.remove(value)
+
+
 class WSIPCClient:
     def __init__(
         self,
@@ -44,6 +61,7 @@ class WSIPCClient:
         self.closed: bool = False
 
         self._callbacks: Dict[int, Set[Callback]] = {}
+        self._events = EventIDManager()
 
         self.connected = Event()
         self.connected.clear()
@@ -114,6 +132,13 @@ class WSIPCClient:
                     await self._heartbeat()
 
                 elif data["t"] == PayloadType.DATA:
+                    idempotency = data.get("i", None)
+
+                    if idempotency is not None:
+                        if not self._events.add(idempotency):
+                            logger.debug(f"Dropping event with duplicate idempotency ID: {idempotency}")
+                            continue
+
                     for callback in self._callbacks.get(data.get("c", 0), set()):
                         create_task(maybe_async(callback, data["d"]))
 
@@ -156,7 +181,7 @@ class WSIPCClient:
 
         logger.debug(f"Successfully closed connection to {self.host}:{self.port}.")
 
-    async def send(self, message: Any, include_self: bool = False, channel: int = 0) -> None:
+    async def send(self, message: Any, include_self: bool = False, channel: int = 0, idempotency: int = None) -> None:
         """Send a message to the IPC network.
 
         Args:
@@ -171,13 +196,14 @@ class WSIPCClient:
         if not self._ws:
             raise RuntimeError("WSIPCClient is not connected.")
 
-        await self._ws.send_json(
-            {
-                "t": PayloadType.DATA,
-                "d": message,
-                "s": include_self,
-                "c": channel,
-            }
-        )
+        payload = {
+            "t": PayloadType.DATA,
+            "d": message,
+            "s": include_self,
+            "c": channel,
+            "i": idempotency,
+        }
 
-        logger.debug(f"Sent message: {message}")
+        await self._ws.send_json(payload)
+
+        logger.debug(f"Sent message: {payload}")

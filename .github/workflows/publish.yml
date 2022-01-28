@@ -1,8 +1,8 @@
 name: Publish WSIPC
 on:
-  release:
-    types:
-      - "create"
+  push:
+    tags:
+      - "*.*.*"
 
 jobs:
   build:
